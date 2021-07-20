@@ -1,6 +1,8 @@
 import json
 import pprint 
 
+
+# PPRINT and JSON DUMPS useful for printing nicely outputs 
 # define the board
 # define how people input their moves
 # plays = 0(empty) 1(blue) 2(red)
@@ -66,13 +68,6 @@ def play(board, move, player):
 blues_paths = [(1, 3, 4, 7, 9, 11), (1, 4, 7, 7 )]
 
 
-# def does_full_path_exist (board, path_walked = [ ]):
-#     if is_last_step_at_the_other_end (path_walked [-1]): return True
-#     for next_step in generate_unique_next_steps (board, path_walked):
-#         if does_full_path_exist (augment (board, next_step), path_walked + next_step): return True
-#     return False
-
-
 # def check_path_regular_h(player = 1 or 2, move = []):
 #     """Check to see if there's a path for a play made by either:
 #         - blue in an odds cube
@@ -89,13 +84,6 @@ blues_paths = [(1, 3, 4, 7, 9, 11), (1, 4, 7, 7 )]
 
 
 
-# def check_path_sideways_h():
-#     """Check to see if there's a path for a play made by either:
-#         - red in an odds cube
-#         - blue in an evens cube """
-
-
-# 2. draw the H based on who player is and which cube
 # blue = 0, red = 1,
 # cubity, 1=odd
 # horizontal h = 0, vertical h = 1
@@ -105,7 +93,6 @@ blues_paths = [(1, 3, 4, 7, 9, 11), (1, 4, 7, 7 )]
 # 0 1 0
 # 1 0 0
 # 1 1 1
-
 
 def determine_moves(board, move, board_size):
     cubity, row, column = move 
@@ -149,74 +136,44 @@ def determine_moves(board, move, board_size):
     return inbound_moves
 
 
-# LOOK INTO PPRINT! or JSON DUMPS!!
+# def does_full_path_exist (board, path_walked = [ ]):
+#     if is_last_step_at_the_other_end (path_walked [-1]): return True
+#     for next_step in generate_unique_next_steps (board, path_walked):
+#         if does_full_path_exist (augment (board, next_step), path_walked + next_step): return True
+#     return False
 
-# Board of 2's
-# >>> print(json.dumps(determine_moves(board, 1, 1, 1, 4), indent = 4))
-# [
-#     [
-#         1,
-#         0,
-#         1
-#     ],
-#     [
-#         1,
-#         2,
-#         1
-#     ],
-#     [
-#         0,
-#         1,
-#         1
-#     ],
-#     [
-#         0,
-#         1,
-#         2
-#     ],
-#     [
-#         0,
-#         2,
-#         2
-#     ],
-#     [
-#         0,
-#         2,
-#         1
-#     ]
-# ]
+# move = [0, 2, 2] (oddity, row, column)
 
-# Board of 1s
-# >>> print(json.dumps(determine_moves(board, 1, 1, 1, 4), indent = 4))
-# [
-#     [
-#         1,
-#         1,
-#         0
-#     ],
-#     [
-#         1,
-#         1,
-#         2
-#     ],
-#     [
-#         0,
-#         1,
-#         1
-#     ],
-#     [
-#         0,
-#         1,
-#         2
-#     ],
-#     [
-#         0,
-#         2,
-#         2
-#     ],
-#     [
-#         0,
-#         2,
-#         1
-#     ]
-# ]
+def does_full_path_exist(board, current_move):
+    """Checks for a win"""
+
+    board_size = len(board[0][0])
+
+    # TODO: Make this work for both players (vertical and horizontal )
+    player = board[current_move[0]][current_move[1]][current_move[2]]
+    assert player > 0 # player is either 1=blue (vertically) or 2=red (horizontally)
+
+    # quick check - if extreme sides/top/bottom is empty, then player can't have won 
+    if (all (board[0][0][x] != player for x in range(board_size)) or 
+        all (board[0][board_size - 1][x] != player for x in range(board_size))):
+        return false 
+
+    if (all (board[0][x][0] != player for x in range(board_size)) or 
+        all (board[0][x][board_size - 1] != player for x in range(board_size))):
+        return false 
+
+    # initialize empty board of breadcrumbs for the player 
+    bread = [[[0 for row in range(board_size - cubity)] 
+                 for column in range(board_size - cubity)] 
+                 for cubity in range(2)]
+
+    # update breadcrumbs board with current move 
+    bread[current_move[0]current_move[1]current_move[2]] = player 
+
+    # span walks the board of breadcrumbs at the current move and updates it 
+    # with all the existing connected moves 
+    span(board, bread, player, current_move)
+    return (any (bread[0][0][x] == player for x in range(board_size)) and 
+            any (bread[0][board_size - 1][x] == player for x in range(board_size)))
+
+    
