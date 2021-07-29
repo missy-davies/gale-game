@@ -1,8 +1,6 @@
 import json
 import pprint 
 
-
-# PPRINT and JSON DUMPS useful for printing nicely outputs 
 # define the board
 # define how people input their moves
 # plays = 0(empty) 1(blue) 2(red)
@@ -83,16 +81,10 @@ blues_paths = [(1, 3, 4, 7, 9, 11), (1, 4, 7, 7 )]
 #             call the next relevant function
 
 
-
 # blue = 0, red = 1,
 # cubity, 1=odd
 # horizontal h = 0, vertical h = 1
 
-# player color | cubity | outcome (xnor)
-# 0 0 1
-# 0 1 0
-# 1 0 0
-# 1 1 1
 
 def determine_moves(board, move, board_size):
     cubity, row, column = move 
@@ -168,12 +160,66 @@ def does_full_path_exist(board, current_move):
                  for cubity in range(2)]
 
     # update breadcrumbs board with current move 
-    bread[current_move[0]current_move[1]current_move[2]] = player 
+    # bread[current_move[0]current_move[1]current_move[2]] = player 
 
     # span walks the board of breadcrumbs at the current move and updates it 
     # with all the existing connected moves 
-    span(board, bread, player, current_move)
-    return (any (bread[0][0][x] == player for x in range(board_size)) and 
-            any (bread[0][board_size - 1][x] == player for x in range(board_size)))
+    # span(board, bread, player, current_move)
+    # return (any (bread[0][0][x] == player for x in range(board_size)) and 
+    #         any (bread[0][board_size - 1][x] == player for x in range(board_size)))
 
-    
+# Make plays reversible - TODO: encode a stack, make it possible to walk foward and back
+# [move, magic status]
+# history.append([coordinates, magic])
+
+history = []
+
+def neighbor_status(current_move, player, board, bread, board_size):
+    neighbors = determine_moves(bread, current_move, board_size)
+
+    magic = 0 
+
+    # walk through six neighbors
+    for power, neighbor in enumerate(neighbors):
+        if board[neighbor[0]][neighbor[1]][neighbor[1]] == player: # 0, 1, 2, 3 whether it's empty, island, L, R
+            # 0 * 4^0 + 0 * 4^1 + 1 * 4^2 + 2 * 4^3 + 3 * 4^4 + 1 * 4^5 = 1936
+            magic += bread[neighbor[0]][neighbor[1]][neighbor[1]] * 4 ^ power
+            
+    return magic
+
+# TODO: Walk path to update nearby neighbors in bread -> can use same way of doing this for forward and reverse 
+# TODO: Might update bread and board to be unified 
+# Let board contain both info? Might help with moving forward and reversing 
+
+# Chat notes 
+# Mike C to Everyone (6:02 PM)
+# (0, 0, 1, 2 3 1)
+# Me to Everyone (6:03 PM)
+# 001231
+# .001231
+# Mike C to Everyone (6:05 PM)
+# (3, 1, 4, 1, 5, 9)
+# -> 314159
+# 3 * 10^5   +  1 * 10^4 + ... + 9 * 10^0
+# n * 4^5 + m * 4^4 + el * 4^3 ...
+# [ red | yellow | green | purple | blue ]
+# Mike C to Everyone (6:10 PM)
+# 5 * 5 * 5
+# ( 0 .. 4 )
+# [15, magic0]
+# a = []
+# a.append(3)
+# Mike C to Everyone (6:16 PM)
+# history.append([coordinates, magic])
+# len(history)
+# Mike C to Everyone (6:42 PM)
+# multiplier = 1
+# (0, 0, 1, 2, 3, 1)
+# 0 * 4^0 + 0 * 4^1 + 1 * 4^2 + 2 * ...
+# Mike C to Everyone (6:48 PM)
+# (3, 1, 4, 1, 5, 9)
+# 314159
+# 314159 / 1000 (int divide)
+# -> 314
+# 314 modulo 10 (314 % 10)
+# -> 4
