@@ -1,35 +1,18 @@
 import json
-import pprint 
+import pprint
 
-# define the board
-# define how people input their moves
-# plays = 0(empty) 1(blue) 2(red)
-
-# functions
-# -build game board
-# -- allocate a game board
-# -- initialize game board
-
-# - game play
-# - def try_next_move (board, moves_played): ...
-# -- making a move
-# -- checking for win
-
-# minimax
-# comp vs. user -> comp plays assuming user plays optimally
-# monte carlo
+# Allocate a game board
 
 # board size = n^2 + (n-1)^2
-
 # Set board size
 n = 4
 
-# Initialize board
-board = [[[1 for row in range(n - cubity)] 
-             for column in range(n - cubity)] 
+# Initialize board as being empty for the determined board size 
+board = [[[0 for row in range(n - cubity)]
+             for column in range(n - cubity)]
              for cubity in range(2)]
 
-# Example Board: 
+# Example Board:
 # [[[0, 0, 0, 0],
 #   [0, 0, 1, 0],
 #   [0, 0, 0, 0],
@@ -42,7 +25,6 @@ board = [[[1 for row in range(n - cubity)]
 # player_a = input("Player A: Enter a move: ")
 # player_b = input("Player B: Enter a move: ")
 
-# move = [0, 2, 2], player = 1 or 2, board[oddity, row, column]
 def play(board, move, player):
     '''Given a board and a player's move, update the board'''
 
@@ -60,11 +42,14 @@ def play(board, move, player):
 
     assert board[move[0]][move[1]][move[2]] == 0
 
-    board[move[0]][move[1]][move[2]] = player
-
-
-blues_paths = [(1, 3, 4, 7, 9, 11), (1, 4, 7, 7 )]
-
+    # 'converting' information to base 4 for consistency with other calcuations
+    # for reference: 
+        # >>> bin(((num // 4) * (4 ** 1)) + new)
+        # '0b1011001011110110000010110'
+        # here we take the original number, remove last 2 digits, 
+        # add space for 2 bits back, then replace them with whatever we want
+    board[move[0]][move[1]][move[2]] = ((board[move[0]][move[1]][move[2]] // 4) * (4 ** 1)) + (player * 4**0)
+    
 
 # def check_path_regular_h(player = 1 or 2, move = []):
 #     """Check to see if there's a path for a play made by either:
@@ -87,8 +72,13 @@ blues_paths = [(1, 3, 4, 7, 9, 11), (1, 4, 7, 7 )]
 
 
 def determine_moves(board, move, board_size):
-    cubity, row, column = move 
-    player = board[cubity][row][column]
+    '''Determine what potential paths are available surrounding an existing move.
+       This consists of finding the wings and pack as per our examples.'''
+
+    cubity, row, column = move
+    
+    player = board[cubity][row][column] % 4 # get last 2 digits of encoded info 
+
     potential_moves = []
 
     assert player > 0
@@ -96,20 +86,20 @@ def determine_moves(board, move, board_size):
 
     orientation = player ^ cubity ^ 1 # XOR with 1 to make it XNOR
 
-    # finding wings 
+    # finding wings
     potential_moves.extend([
-        [cubity, row - orientation, column - (1 - orientation)], 
-        [cubity, row + orientation, column + (1 - orientation)], 
-        ])  
+        [cubity, row - orientation, column - (1 - orientation)],
+        [cubity, row + orientation, column + (1 - orientation)],
+        ])
 
     # finding other possibilities
-    # result independent of orientation 
-    additive = (cubity * 2) - 1 
+    # result independent of orientation
+    additive = (cubity * 2) - 1
 
     potential_moves.extend([
-        [cubity ^ 1, row, column], 
-        [cubity ^ 1, row, column + additive], 
-        [cubity ^ 1, row + additive, column + additive], 
+        [cubity ^ 1, row, column],
+        [cubity ^ 1, row, column + additive],
+        [cubity ^ 1, row + additive, column + additive],
         [cubity ^ 1, row + additive, column],
         ])
 
@@ -117,14 +107,14 @@ def determine_moves(board, move, board_size):
     for move in potential_moves:
         assert move[0] == 0 or move[0] == 1
         if (
-                move[1] >= 0 
+                move[1] >= 0
             and move[1] < board_size - cubity
-            and move[2] >= 0 
+            and move[2] >= 0
             and move[2] < board_size - cubity
            ):
            inbound_moves.append(move)
-    
-    # output is a 2D array of inbound potential moves 
+
+    # output is a 2D array of inbound potential moves
     return inbound_moves
 
 
@@ -142,30 +132,24 @@ def does_full_path_exist(board, current_move):
     board_size = len(board[0][0])
 
     # TODO: Make this work for both players (vertical and horizontal )
-    player = board[current_move[0]][current_move[1]][current_move[2]]
+    player = board[current_move[0]][current_move[1]][current_move[2]] % 4
     assert player > 0 # player is either 1=blue (vertically) or 2=red (horizontally)
 
-    # quick check - if extreme sides/top/bottom is empty, then player can't have won 
-    if (all (board[0][0][x] != player for x in range(board_size)) or 
-        all (board[0][board_size - 1][x] != player for x in range(board_size))):
-        return false 
+    # quick check - if extreme sides/top/bottom is empty, then player can't have won
+    if (all (board[0][0][x] % 4 != player for x in range(board_size)) or
+        all (board[0][board_size - 1][x] % 4 != player for x in range(board_size))):
+        return false
 
-    if (all (board[0][x][0] != player for x in range(board_size)) or 
-        all (board[0][x][board_size - 1] != player for x in range(board_size))):
-        return false 
+    if (all (board[0][x][0] % 4 != player for x in range(board_size)) or
+        all (board[0][x][board_size - 1] % 4 != player for x in range(board_size))):
+        return false
 
-    # initialize empty board of breadcrumbs for the player 
-    bread = [[[0 for row in range(board_size - cubity)] 
-                 for column in range(board_size - cubity)] 
-                 for cubity in range(2)]
+ 
 
-    # update breadcrumbs board with current move 
-    # bread[current_move[0]current_move[1]current_move[2]] = player 
-
-    # span walks the board of breadcrumbs at the current move and updates it 
-    # with all the existing connected moves 
+    # span walks the board of breadcrumbs at the current move and updates it
+    # with all the existing connected moves
     # span(board, bread, player, current_move)
-    # return (any (bread[0][0][x] == player for x in range(board_size)) and 
+    # return (any (bread[0][0][x] == player for x in range(board_size)) and
     #         any (bread[0][board_size - 1][x] == player for x in range(board_size)))
 
 # Make plays reversible - TODO: encode a stack, make it possible to walk foward and back
@@ -174,52 +158,27 @@ def does_full_path_exist(board, current_move):
 
 history = []
 
-def neighbor_status(current_move, player, board, bread, board_size):
-    neighbors = determine_moves(bread, current_move, board_size)
+def neighbor_status(current_move, player, board, board_size):
+    '''Given a current move, determine what the status of the neighboring cells
+       are - empty, island, Left or Right (Top / Bottom) attached'''
 
-    magic = 0 
+    neighbors = determine_moves(board, current_move, board_size)
+
+    status = 0
 
     # walk through six neighbors
     for power, neighbor in enumerate(neighbors):
-        if board[neighbor[0]][neighbor[1]][neighbor[1]] == player: # 0, 1, 2, 3 whether it's empty, island, L, R
+        if board[neighbor[0]][neighbor[1]][neighbor[2]] % 4 == player: 
             # 0 * 4^0 + 0 * 4^1 + 1 * 4^2 + 2 * 4^3 + 3 * 4^4 + 1 * 4^5 = 1936
-            magic += bread[neighbor[0]][neighbor[1]][neighbor[1]] * 4 ^ power
-            
-    return magic
+            status += (board[neighbor[0]][neighbor[1]][neighbor[2]] % 4) * (4 ^ power)
 
-# TODO: Walk path to update nearby neighbors in bread -> can use same way of doing this for forward and reverse 
-# TODO: Might update bread and board to be unified 
-# Let board contain both info? Might help with moving forward and reversing 
+    return status # 0, 1, 2, 3 whether it's empty, island, L, R per neighbor 
 
-# Chat notes 
-# Mike C to Everyone (6:02 PM)
-# (0, 0, 1, 2 3 1)
-# Me to Everyone (6:03 PM)
-# 001231
-# .001231
-# Mike C to Everyone (6:05 PM)
-# (3, 1, 4, 1, 5, 9)
-# -> 314159
-# 3 * 10^5   +  1 * 10^4 + ... + 9 * 10^0
-# n * 4^5 + m * 4^4 + el * 4^3 ...
-# [ red | yellow | green | purple | blue ]
-# Mike C to Everyone (6:10 PM)
-# 5 * 5 * 5
-# ( 0 .. 4 )
-# [15, magic0]
-# a = []
-# a.append(3)
-# Mike C to Everyone (6:16 PM)
-# history.append([coordinates, magic])
-# len(history)
-# Mike C to Everyone (6:42 PM)
-# multiplier = 1
-# (0, 0, 1, 2, 3, 1)
-# 0 * 4^0 + 0 * 4^1 + 1 * 4^2 + 2 * ...
-# Mike C to Everyone (6:48 PM)
-# (3, 1, 4, 1, 5, 9)
-# 314159
-# 314159 / 1000 (int divide)
-# -> 314
-# 314 modulo 10 (314 % 10)
-# -> 4
+# TODO: Walk path to update nearby neighbors in bread -> can use same way of doing this for forward and reverse
+# Let board contain both info? Might help with moving forward and reversing
+
+# TODO: Use one of the reserved bits for seen / unseen variable temporary 
+# leaving a trail of breadcrumbs, what needs to change in the moment
+
+# Board and bread are now unified - where board contains information about what player 
+# occupies the space and info about the surrounding neighbors 
