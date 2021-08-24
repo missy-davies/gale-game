@@ -7,7 +7,7 @@ import pprint
 # Set board size
 n = 4
 
-# Initialize board as being empty for the determined board size 
+# Initialize board as being empty for the determined board size
 board = [[[0 for row in range(n - cubity)]
              for column in range(n - cubity)]
              for cubity in range(2)]
@@ -43,13 +43,13 @@ def play(board, move, player):
     assert board[move[0]][move[1]][move[2]] == 0
 
     # 'converting' information to base 4 for consistency with other calcuations
-    # for reference: 
+    # for reference:
         # >>> bin(((num // 4) * (4 ** 1)) + new)
         # '0b1011001011110110000010110'
-        # here we take the original number, remove last 2 digits, 
+        # here we take the original number, remove last 2 digits,
         # add space for 2 bits back, then replace them with whatever we want
     board[move[0]][move[1]][move[2]] = ((board[move[0]][move[1]][move[2]] // 4) * (4 ** 1)) + (player * 4**0)
-    
+
 
 # def check_path_regular_h(player = 1 or 2, move = []):
 #     """Check to see if there's a path for a play made by either:
@@ -76,8 +76,8 @@ def determine_moves(board, move, board_size):
        This consists of finding the wings and pack as per our examples.'''
 
     cubity, row, column = move
-    
-    player = board[cubity][row][column] % 4 # get last 2 digits of encoded info 
+
+    player = board[cubity][row][column] % 4 # get last 2 digits of encoded info
 
     potential_moves = []
 
@@ -144,7 +144,7 @@ def does_full_path_exist(board, current_move):
         all (board[0][x][board_size - 1] % 4 != player for x in range(board_size))):
         return false
 
- 
+
 
     # span walks the board of breadcrumbs at the current move and updates it
     # with all the existing connected moves
@@ -168,17 +168,26 @@ def neighbor_status(current_move, player, board, board_size):
 
     # walk through six neighbors
     for power, neighbor in enumerate(neighbors):
-        if board[neighbor[0]][neighbor[1]][neighbor[2]] % 4 == player: 
+        if board[neighbor[0]][neighbor[1]][neighbor[2]] % 4 == player:
             # 0 * 4^0 + 0 * 4^1 + 1 * 4^2 + 2 * 4^3 + 3 * 4^4 + 1 * 4^5 = 1936
             status += (board[neighbor[0]][neighbor[1]][neighbor[2]] % 4) * (4 ^ power)
 
-    return status # 0, 1, 2, 3 whether it's empty, island, L, R per neighbor 
+    return status # 0, 1, 2, 3 whether it's empty, island, L, R per neighbor
 
-# TODO: Walk path to update nearby neighbors in bread -> can use same way of doing this for forward and reverse
+# Walk path to update nearby neighbors in bread -> can use same way of doing this for forward and reverse
 # Let board contain both info? Might help with moving forward and reversing
+def walk_path(starting_point, board):
+    board[starting_point[0]][starting_point[1]][starting_point[2]] |= 4 # set_breadcrumb(starting_point)
+    # Maybe update status here? 
 
-# TODO: Use one of the reserved bits for seen / unseen variable temporary 
+    for move in determine_moves(starting_point):
+        if not (board[move[0]][move[1]][move[2]] // 4) % 2: # get_breadcrumbs(move)
+            walk_path(move, board)
+    
+
+
+# TODO: Use one of the reserved bits for seen / unseen variable temporary
 # leaving a trail of breadcrumbs, what needs to change in the moment
 
-# Board and bread are now unified - where board contains information about what player 
-# occupies the space and info about the surrounding neighbors 
+# Board and bread are now unified - where board contains information about what player
+# occupies the space and info about the surrounding neighbors
