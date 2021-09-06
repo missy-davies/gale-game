@@ -126,25 +126,24 @@ def determine_moves(board, move, board_size):
 
 # move = [0, 2, 2] (oddity, row, column)
 
-def does_full_path_exist(board, current_move):
-    """Checks for a win"""
+# legacy
+# def does_full_path_exist(board, current_move):
+#     """Checks for a win"""
 
-    board_size = len(board[0][0])
+#     board_size = len(board[0][0])
 
-    # TODO: Make this work for both players (vertical and horizontal )
-    player = board[current_move[0]][current_move[1]][current_move[2]] % 4
-    assert player > 0 # player is either 1=blue (vertically) or 2=red (horizontally)
+#     # TODO: Make this work for both players (vertical and horizontal )
+#     player = board[current_move[0]][current_move[1]][current_move[2]] % 4
+#     assert player > 0 # player is either 1=blue (vertically) or 2=red (horizontally)
 
-    # quick check - if extreme sides/top/bottom is empty, then player can't have won
-    if (all (board[0][0][x] % 4 != player for x in range(board_size)) or
-        all (board[0][board_size - 1][x] % 4 != player for x in range(board_size))):
-        return false
+#     # quick check - if extreme sides/top/bottom is empty, then player can't have won
+#     if (all (board[0][0][x] % 4 != player for x in range(board_size)) or
+#         all (board[0][board_size - 1][x] % 4 != player for x in range(board_size))):
+#         return false
 
-    if (all (board[0][x][0] % 4 != player for x in range(board_size)) or
-        all (board[0][x][board_size - 1] % 4 != player for x in range(board_size))):
-        return false
-
-
+#     if (all (board[0][x][0] % 4 != player for x in range(board_size)) or
+#         all (board[0][x][board_size - 1] % 4 != player for x in range(board_size))):
+#         return false
 
     # span walks the board of breadcrumbs at the current move and updates it
     # with all the existing connected moves
@@ -156,7 +155,7 @@ def does_full_path_exist(board, current_move):
 # [move, magic status]
 # history.append([coordinates, magic])
 
-history = []
+# history = []
 
 def neighbor_status(current_move, player, board, board_size):
     '''Given a current move, determine what the status of the neighboring cells
@@ -176,18 +175,38 @@ def neighbor_status(current_move, player, board, board_size):
 
 # Walk path to update nearby neighbors in bread -> can use same way of doing this for forward and reverse
 # Let board contain both info? Might help with moving forward and reversing
-def walk_path(starting_point, board):
+def walk_path(starting_point, board, highest_status):
     board[starting_point[0]][starting_point[1]][starting_point[2]] |= 4 # set_breadcrumb(starting_point)
-    # Maybe update status here? 
+
+    # add in bit space to store status, then update it 
+    (board[starting_point[0]][starting_point[1]][starting_point[2]] // 8) % 4 # how we access status bit
+    # TODO: Need to examine the status bit, and change it if needed  
 
     for move in determine_moves(starting_point):
         if not (board[move[0]][move[1]][move[2]] // 4) % 2: # get_breadcrumbs(move)
             walk_path(move, board)
     
 
+def consider_endgame(board, current_move):
+    # look around where you are by last move 
+    # send elf down the path 
 
-# TODO: Use one of the reserved bits for seen / unseen variable temporary
-# leaving a trail of breadcrumbs, what needs to change in the moment
+    neighbors = determine_moves(board, current_move, board_size)
 
+    highest = 0
+    # walk through six neighbors
+    for power, neighbor in enumerate(neighbors):
+        if board[neighbor[0]][neighbor[1]][neighbor[2]] % 4 == player:
+            status = (board[neighbor[0]][neighbor[1]][neighbor[2]] % 4) 
+            if status > highest:
+                highest = status 
+                status = highest # promoting, maybe need to call walk path with highest thing as status point? 
+        
+    
 # Board and bread are now unified - where board contains information about what player
 # occupies the space and info about the surrounding neighbors
+
+# bits 1 and 0: claimed
+# bit 2: claimed
+# bits 3 4: status
+# bits 5 and higher (5 + 6 - 1)... : integer status encoding for reverseing
